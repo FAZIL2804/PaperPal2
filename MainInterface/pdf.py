@@ -170,10 +170,10 @@ class ButtonHolder(QWidget):
         self.prev_button.clicked.connect(self.prev_occurrence)
         self.prev_button.setFixedSize(60,40)
 
-        self.add_bookmark_button = CustomButton_2("Bookmarks \n (Select a text )") 
+        self.add_bookmark_button = CustomButton_2("Bookmarks \n (Select a text )") #Creating button and linking to the add_bookmark function
         self.add_bookmark_button.clicked.connect(self.add_bookmark)
 
-        self.go_to_bookmark_button= CustomButton("Go to Bookmark")
+        self.go_to_bookmark_button= CustomButton("Go to Bookmark")#creating button and linking to the go_to_bookmark function
         self.go_to_bookmark_button.clicked.connect(self.go_to_bookmark)
 
         self.navigate_layout=QHBoxLayout()
@@ -230,7 +230,6 @@ class ButtonHolder(QWidget):
 
     def search_pdf(self):
         search_query = self.search_box.text()
-        print(search_query,type(search_query))
         if search_query:
             # Set the cursor to the start of the document
             cursor = self.main_window.pdf_view.text_edit.textCursor()
@@ -261,7 +260,6 @@ class ButtonHolder(QWidget):
     def next_occurrence(self):
         if self.search_results:
             self.current_pos = (self.current_pos + 1) % len(self.search_results)
-            print(self.current_pos)
             self.main_window.pdf_view.text_edit.setTextCursor(self.search_results[self.current_pos])
             self.main_window.pdf_view.text_edit.ensureCursorVisible()
 
@@ -273,75 +271,98 @@ class ButtonHolder(QWidget):
             self.main_window.pdf_view.text_edit.setTextCursor(self.search_results[self.current_pos])
             self.main_window.pdf_view.text_edit.ensureCursorVisible()
 
-
+    # Function to add a bookmark
     def add_bookmark(self):
-
+        # Get selected text from PDF view
         selected_text = self.main_window.pdf_view.get_selected_text()
+        # If text is selected
         if selected_text:
-            # Get the current page number based on the cursor position
+            # Get current page number based on cursor position
             cursor = self.main_window.pdf_view.text_edit.textCursor()
             current_page = cursor.blockNumber() + 1 
+            # Get current directory
             current_dir = os.getcwd()   
-            pdf_name=os.path.splitext(os.path.basename(self.main_window.pdf_view.pdf_path))[0]
-            bookmark_window = MyWindow(current_page,pdf_name,current_dir,selected_text)  # This creates the window for adding a bookmark
-            bookmark_window.setGeometry(100, 100, 900, 400)  # Adjust geometry as needed
-            bookmark_window.show()  # Show the window
-
-            # Call exec_ to ensure the application event loop is properly executed
-            bookmark_window.exec()
+            # Extract PDF name from path
+            pdf_name = os.path.splitext(os.path.basename(self.main_window.pdf_view.pdf_path))[0]
+            # Create bookmark window with required inputs
+            bookmark_window = MyWindow(current_page, pdf_name, current_dir, selected_text)
+            # Set window geometry
+            bookmark_window.setGeometry(100, 100, 900, 400)
+            # Show the window
+            bookmark_window.show()
+            # Execute the window event loop
+            bookmark_window.exec_()
         else:
-            QMessageBox.information(self,"No Text selected "," please select a text to add bookmark")
-
+            # Show message if no text is selected
+            QMessageBox.information(self, "No Text selected", "Please select a text to add bookmark")
+    
+    
+     # Function to go to a bookmark in the PDF
     def go_to_bookmark(self):
+        # Get current directory
         current_dir = os.getcwd()   
-        pdf_name=os.path.splitext(os.path.basename(self.main_window.pdf_view.pdf_path))[0]
-        dialog=open_bookmark(pdf_name,current_dir)
+        # Extract PDF name from path
+        pdf_name = os.path.splitext(os.path.basename(self.main_window.pdf_view.pdf_path))[0]
+        # Open bookmark dialog
+        dialog = open_bookmark(pdf_name, current_dir)
+        # Execute dialog and get result
         result = dialog.exec()
+        # If dialog is accepted
         if result == QDialog.Accepted:
-             selected_page_number,selected_word = dialog.get_selected_bookmark()
-             if selected_page_number is not None:
-                 self.search_bookmark(selected_page_number,selected_word)
-
+            # Get selected page number and word from dialog
+            selected_page_number, selected_word = dialog.get_selected_bookmark()
+            # If page number is not None
+            if selected_page_number is not None:
+                # Search for bookmark
+                self.search_bookmark(selected_page_number, selected_word)
+    
+    # Function to search for a bookmarked word
     def search_bookmark(self, page_number, word):
-
+        # If word exists
         if word:
-            # Set the cursor to the start of the document
+            # Set cursor to start of document
             cursor = self.main_window.pdf_view.text_edit.textCursor()
             cursor.setPosition(0)
             self.main_window.pdf_view.text_edit.setTextCursor(cursor)
-            
             # Clear previous search results
             self.search_result.clear()
             self.current_pos = -1
+            # Loop until all occurrences of word are found
             while True:
+                # Find next occurrence of word
                 found_cursor = self.main_window.pdf_view.text_edit.document().find(word, cursor)
+                # If no more occurrences found, break loop
                 if found_cursor.isNull():
                     break
+                # Append found occurrence to search result list
                 self.search_result.append(found_cursor)
                 cursor = found_cursor
-            
-            # Search for all occurrences of the word
+            # If search result is not empty
             if self.search_result:
-                     self.current_pos=0
-                # Move the cursor to the first occurrence
-                     new_cursor = self.main_window.pdf_view.text_edit.textCursor()
-                     current_page = new_cursor.blockNumber() + 1
-                     while (current_page!=page_number) :
-                              self.current_pos = (self.current_pos + 1) % len(self.search_result)
-                              self.main_window.pdf_view.text_edit.setTextCursor(self.search_result[self.current_pos])
-                              self.main_window.pdf_view.text_edit.ensureCursorVisible()
-                              cursor = self.main_window.pdf_view.text_edit.textCursor()
-                              current_page = cursor.blockNumber() + 1
+                self.current_pos = 0
+                # Move cursor to first occurrence on specified page
+                new_cursor = self.main_window.pdf_view.text_edit.textCursor()
+                current_page = new_cursor.blockNumber() + 1
+                # Loop until cursor is on specified page
+                while current_page != page_number:
+                    self.current_pos = (self.current_pos + 1) % len(self.search_result)
+                    self.main_window.pdf_view.text_edit.setTextCursor(self.search_result[self.current_pos])
+                    self.main_window.pdf_view.text_edit.ensureCursorVisible()
+                    cursor = self.main_window.pdf_view.text_edit.textCursor()
+                    current_page = cursor.blockNumber() + 1
             else:
+                # Print message if bookmark not found
                 self.main_window.information.print_data("Bookmark not found.")
 
+# Class for representing a bookmark data object
 class Data_Bookmark:
-    def __init__(self, bookmark_name, page_number, notes,word):
+    def __init__(self, bookmark_name, page_number, notes, word):
         self.bookmark_name = bookmark_name
         self.page_number = page_number
         self.notes = notes
-        self.word=word
+        self.word = word
 
+# Class for displaying and managing bookmarks dialog
 class open_bookmark(QDialog):
     def __init__(self, pdf_name, current_dir):
         super().__init__()
@@ -350,39 +371,48 @@ class open_bookmark(QDialog):
         self.setup_ui()
 
     def setup_ui(self):
+        # Set dialog title
         self.setWindowTitle("Open Bookmark")
 
+        # Create table widget for displaying bookmarks
         self.table_widget = QTableWidget(self)
         self.table_widget.setColumnCount(4)
-        self.table_widget.setHorizontalHeaderLabels(["Bookmark Name", "Page Number", "Notes"])
+        self.table_widget.setHorizontalHeaderLabels(["Bookmark Name", "Page Number", "Notes", "Word"])
 
+        # Set column widths
         self.table_widget.setColumnWidth(0, 150)  # Bookmark Name
         self.table_widget.setColumnWidth(1, 80)  # Page Number
         self.table_widget.setColumnWidth(2, 250)  # Notes
-        self.table_widget.setColumnWidth(3, 250)  # Hint
+        self.table_widget.setColumnWidth(3, 250)  # Word
 
-        # Set the row height for better visibility of multi-line notes
+        # Set row height for better visibility of multi-line notes
         self.table_widget.verticalHeader().setDefaultSectionSize(50)
 
         # Set selection mode to select entire rows
         self.table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
 
+        # Create button for opening selected bookmark
         self.open_button = QPushButton("Open Bookmark", self)
         self.open_button.clicked.connect(self.accept)
 
+        # Set up layout
         layout = QVBoxLayout(self)
         layout.addWidget(self.table_widget)
         layout.addWidget(self.open_button)
 
+        # Load bookmarks into the table
         self.load_bookmarks()
+
+        # Set fixed dialog size
         self.setFixedSize(900, 400)
 
     def add_bookmark_to_table(self, bookmark):
-
+        # Get current row position
         row_position = self.table_widget.rowCount()
+        # Insert new row into the table
         self.table_widget.insertRow(row_position)
 
-        # Insert bookmark's details into the table
+        # Insert bookmark's details into the table cells
         self.table_widget.setItem(row_position, 0, QtWidgets.QTableWidgetItem(bookmark.bookmark_name))
         self.table_widget.setItem(row_position, 1, QtWidgets.QTableWidgetItem(str(bookmark.page_number)))
         self.table_widget.setItem(row_position, 2, QtWidgets.QTableWidgetItem(bookmark.notes))
@@ -391,15 +421,16 @@ class open_bookmark(QDialog):
     def load_bookmarks(self):
         # Define the file name based on the PDF name
         filename = f"{self.pdf_name}_bookmarks.txt"
-        # Get the current directory
+        # Get the full file path
         filepath = os.path.join(self.current_dir, filename)
+
         # Open the file in read mode
         try:
-            with open(filepath, "r+",encoding="utf-8") as file:
+            with open(filepath, "r+", encoding="utf-8") as file:
                 # Read each line from the file
                 for line in file:
                     # Split the line into bookmark details
-                    bookmark_name, page_number, notes,word = line.strip().split(';')
+                    bookmark_name, page_number, notes, word = line.strip().split(';')
                     page_number = int(page_number)
                     # Replace placeholder with newline character
                     notes = notes.replace('<br>', '\n')
@@ -414,15 +445,15 @@ class open_bookmark(QDialog):
             with open(filepath, "w", encoding="utf-8"):
                 pass  # Do nothing, file created
 
-
     def get_selected_bookmark(self):
         selected_items = self.table_widget.selectedItems()
         if selected_items:
             row = selected_items[0].row()
             page_number = int(self.table_widget.item(row, 1).text())
             word = self.table_widget.item(row, 3).text().split()
-            return [page_number,word[0]]
+            return [page_number, word[0]]
         return None
+
 
 
     
