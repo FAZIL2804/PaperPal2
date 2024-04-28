@@ -1,43 +1,44 @@
-from PySide6 import QtWidgets,QtCore
+from PySide6 import QtWidgets, QtCore
 import os
 
+# Class for representing a bookmark data object
 class Data_Bookmark:
-    
-    def __init__(self, bookmark_name, page_number, notes,word):
+    def __init__(self, bookmark_name, page_number, notes, word):
         self.bookmark_name = bookmark_name
         self.page_number = page_number
         self.notes = notes
-        self.word=word
+        self.word = word
 
+# Class for managing bookmark window
 class MyWindow(QtWidgets.QWidget):
-    def __init__(self, page_number,pdf_name,current_dir,word):
+    def __init__(self, page_number, pdf_name, current_dir, word):
         super().__init__()
         self.page_number = page_number
-        self.pdf_name=pdf_name
-        self.current_dir=current_dir
-        self.word=word
+        self.pdf_name = pdf_name
+        self.current_dir = current_dir
+        self.word = word
         self.init_ui()
 
     def init_ui(self):
         self.setWindowTitle("Bookmark Manager")
 
-        # Create QTableWidget with 3 columns for name, page number, and notes
+        # Create QTableWidget for displaying bookmarks
         self.table_widget = QtWidgets.QTableWidget(self)
         self.table_widget.setColumnCount(4)
-        self.table_widget.setHorizontalHeaderLabels(["Bookmark Name", "Page Number", "Notes","Hint"])
+        self.table_widget.setHorizontalHeaderLabels(["Bookmark Name", "Page Number", "Notes", "Hint"])
 
-                # Set the size policy for the table widget
+        # Set size policy for the table widget
         self.table_widget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
-                # Set selection mode to select entire rows
+        # Set selection mode to select entire rows
         self.table_widget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
-        # Set the size of the columns
+        # Set column widths
         self.table_widget.setColumnWidth(0, 150)  # Bookmark Name
         self.table_widget.setColumnWidth(1, 80)  # Page Number
         self.table_widget.setColumnWidth(2, 250)  # Notes
         self.table_widget.setColumnWidth(3, 250)  # Hint
 
-        # Set the row height for better visibility of multi-line notes
+        # Set row height for better visibility of multi-line notes
         self.table_widget.verticalHeader().setDefaultSectionSize(50)
 
         # Create QPushButton for adding, editing, and removing bookmarks
@@ -50,10 +51,8 @@ class MyWindow(QtWidgets.QWidget):
         self.remove_button = QtWidgets.QPushButton("Remove Bookmark", self)
         self.remove_button.clicked.connect(self.remove_bookmark)
 
-        self.close_button = QtWidgets.QPushButton("Close",self)
+        self.close_button = QtWidgets.QPushButton("Close", self)
         self.close_button.clicked.connect(self.close)
-
-
 
         # Create layout
         layout = QtWidgets.QVBoxLayout(self)
@@ -66,19 +65,19 @@ class MyWindow(QtWidgets.QWidget):
         # Load bookmarks from file
         self.load_bookmarks()
 
-
     def add_bookmark(self):
-        # Simulate getting bookmark data (name, page number, notes) from user input
+        # Get bookmark name from user input
         bookmark_name, ok = QtWidgets.QInputDialog.getText(self, "Input Dialog", "Enter Bookmark name:")
         if not ok:
             return
         
+        # Get notes from user input
         notes, ok = QtWidgets.QInputDialog.getText(self, "Input Dialog", "Enter notes:")
         if not ok:
             return
 
         # Create bookmark object
-        bookmark = Data_Bookmark(bookmark_name, self.page_number, notes,self.word)
+        bookmark = Data_Bookmark(bookmark_name, self.page_number, notes, self.word)
 
         # Add bookmark to the table
         self.add_bookmark_to_table(bookmark)
@@ -115,7 +114,6 @@ class MyWindow(QtWidgets.QWidget):
         self.save_bookmarks()
 
     def remove_bookmark(self):
-        
         # Get selected item
         selected_item = self.table_widget.selectedItems()
         if not selected_item:
@@ -130,7 +128,6 @@ class MyWindow(QtWidgets.QWidget):
         self.save_bookmarks()
 
     def add_bookmark_to_table(self, bookmark):
-
         row_position = self.table_widget.rowCount()
         self.table_widget.insertRow(row_position)
 
@@ -146,7 +143,7 @@ class MyWindow(QtWidgets.QWidget):
         # Get the current directory
         filepath = os.path.join(self.current_dir, filename)
         # Open the file in write mode
-        with open(filepath, "w",encoding="utf-8") as file:
+        with open(filepath, "w", encoding="utf-8") as file:
             # Write all bookmarks to the file
             for row in range(self.table_widget.rowCount()):
                 bookmark_name = self.table_widget.item(row, 0).text()
@@ -162,11 +159,11 @@ class MyWindow(QtWidgets.QWidget):
         filepath = os.path.join(self.current_dir, filename)
         # Open the file in read mode
         try:
-            with open(filepath, "r+",encoding="utf-8") as file:
+            with open(filepath, "r+", encoding="utf-8") as file:
                 # Read each line from the file
                 for line in file:
                     # Split the line into bookmark details
-                    bookmark_name, page_number, notes,word = line.strip().split(';')
+                    bookmark_name, page_number, notes, word = line.strip().split(';')
                     page_number = int(page_number)
                     # Replace placeholder with newline character
                     notes = notes.replace('<br>', '\n')
@@ -181,15 +178,9 @@ class MyWindow(QtWidgets.QWidget):
             with open(filepath, "w", encoding="utf-8"):
                 pass  # Do nothing, file created
 
-
-
-
-        
-
-
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
-    window = MyWindow(1, "test", ".",'l')  # Pass the page number, PDF name, and current directory as arguments
+    window = MyWindow(1, "test", ".", 'l')  # Pass the page number, PDF name, and current directory as arguments
     window.setGeometry(100, 100, 400, 300)
     window.show()
     app.exec()
